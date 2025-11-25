@@ -110,9 +110,26 @@ for key, val in default_settings.items():
     if key not in st.session_state:
         st.session_state[key] = val
 
+# Initialize History Stack
+if 'history_stack' not in st.session_state:
+    st.session_state['history_stack'] = []
+if 'history_pointer' not in st.session_state:
+    st.session_state['history_pointer'] = -1
+
+def push_to_history(path):
+    # Truncate if we are in the middle of the stack
+    if st.session_state['history_pointer'] < len(st.session_state['history_stack']) - 1:
+        st.session_state['history_stack'] = st.session_state['history_stack'][:st.session_state['history_pointer']+1]
+    
+    # Avoid pushing duplicates if it's the same as current
+    if not st.session_state['history_stack'] or st.session_state['history_stack'][-1] != path:
+        st.session_state['history_stack'].append(path)
+        st.session_state['history_pointer'] += 1
+
 # Define History Dialog
 @st.dialog("📜 历史记录", width="large")
 def show_history_dialog():
+    # ... (existing code for history dialog)
     st.markdown("""
     <style>
         .history-card {
@@ -178,6 +195,7 @@ def show_history_dialog():
                                 if st.button("📂", key=f"l_{filename}", help="加载"):
                                     st.session_state['current_svg_path'] = file_path
                                     st.session_state['original_svg_path'] = file_path
+                                    push_to_history(file_path) # Add loaded file to history
                                     st.rerun()
                             with c2:
                                 if st.button("🗑️", key=f"d_{filename}", help="删除"):
@@ -204,11 +222,11 @@ with st.sidebar:
 
     st.markdown("---")
     st.subheader("基础设置")
-    colormode = st.selectbox("颜色模式", ["color (彩色)", "binary (黑白)"], index=0)
+    colormode = st.selectbox("颜色模式", ["color (彩色)", "binary (黑白)"], index=0, help="选择输出是彩色还是黑白")
     colormode_val = "color" if "color" in colormode else "binary"
     
-    color_precision = st.slider("颜色精度", 1, 8, 6, help="数值越高颜色越准，但文件越大")
-    filter_speckle = st.slider("噪点过滤", 0, 128, 4, help="过滤掉小于此像素值的噪点区域")
+    color_precision = st.slider("颜色精度", 1, 8, 6, help="数值越高颜色越准，但文件越大 (默认: 6)")
+    filter_speckle = st.slider("噪点过滤", 0, 128, 4, help="过滤掉小于此像素值的噪点区域，使图像更干净 (默认: 4)")
 
     # Advanced Settings in Sidebar (Default Expanded)
     with st.expander("🛠️ 高级设置", expanded=True):
@@ -216,20 +234,28 @@ with st.sidebar:
             "曲线模式", 
             ["spline (平滑曲线)", "polygon (直线)", "none (无)"], 
             key="adv_mode",
-            index=["spline", "polygon", "none"].index(st.session_state['adv_mode'].split(" ")[0])
+            index=["spline", "polygon", "none"].index(st.session_state['adv_mode'].split(" ")[0]),
+            help="定义路径的形状。Spline 更平滑，Polygon 更锐利。"
         )
         
         st.selectbox(
             "分层模式", 
             ["stacked (堆叠)", "cutout (剪切)"], 
             key="adv_hierarchical",
-            index=["stacked", "cutout"].index(st.session_state['adv_hierarchical'].split(" ")[0])
+            index=["stacked", "cutout"].index(st.session_state['adv_hierarchical'].split(" ")[0]),
+            help="Stacked: 形状堆叠在彼此之上。Cutout: 形状互不重叠。"
         )
         
-        st.slider("梯度阈值", 0, 255, key="adv_gradient_step", value=st.session_state['adv_gradient_step'])
-        st.slider("拐角阈值", 0, 180, key="adv_corner_threshold", value=st.session_state['adv_corner_threshold'])
-        st.slider("最小线段长度", 3, 20, key="adv_segment_length", value=st.session_state['adv_segment_length'])
-        st.slider("拼接阈值", 0, 180, key="adv_splice_threshold", value=st.session_state['adv_splice_threshold'])
+        st.slider("梯度阈值", 0, 255, key="adv_gradient_step", value=st.session_state['adv_gradient_step'], help="颜色梯度的量化步长 (默认: 64)")
+        st.slider("拐角阈值", 0, 180, key="adv_corner_threshold", value=st.session_state['adv_corner_threshold'], help="平滑曲线时的拐角角度阈值 (默认: 60)")
+        st.slider("最小线段长度", 3, 20, key="adv_segment_length", value=st.session_state['adv_segment_length'], help="忽略短于此长度的线段 (默认: 4)")
+        st.slider("拼接阈值", 0, 180, key="adv_splice_threshold", value=st.session_state['adv_splice_threshold'], help="拼接连续线段的角度阈值 (默认: 45)")
+        
+        def reset_params():
+            for key, val in default_settings.items():
+                st.session_state[key] = val
+
+        st.button("↺ 重置参数", use_container_width=True, on_click=reset_params)
 
 # Main Layout
 # Use columns to create the layout structure, CSS will handle the positioning
@@ -354,6 +380,8 @@ with col_main:
                     st.session_state['last_params'] = current_params
                     st.session_state['last_file_id'] = file_id
                     
+                    push_to_history(output_path) # Add to history
+                    
                     # Force rerun to update the preview immediately
                     st.rerun()
                     
@@ -396,6 +424,22 @@ with col_main:
 # Right Sidebar (Column) for Color Palette
 with col_right:
     if 'current_svg_path' in st.session_state and os.path.exists(st.session_state['current_svg_path']):
+        
+        # Undo/Redo Buttons
+        ur_col1, ur_col2 = st.columns(2)
+        with ur_col1:
+            if st.button("↩️ 撤销", use_container_width=True, disabled=st.session_state['history_pointer'] <= 0, help="快捷键: 无 (Streamlit限制)"):
+                if st.session_state['history_pointer'] > 0:
+                    st.session_state['history_pointer'] -= 1
+                    st.session_state['current_svg_path'] = st.session_state['history_stack'][st.session_state['history_pointer']]
+                    st.rerun()
+        with ur_col2:
+            if st.button("↪️ 重做", use_container_width=True, disabled=st.session_state['history_pointer'] >= len(st.session_state['history_stack']) - 1):
+                if st.session_state['history_pointer'] < len(st.session_state['history_stack']) - 1:
+                    st.session_state['history_pointer'] += 1
+                    st.session_state['current_svg_path'] = st.session_state['history_stack'][st.session_state['history_pointer']]
+                    st.rerun()
+
         st.subheader("🎨 智能调色板")
         
         # Initialize Color Manager
@@ -425,6 +469,7 @@ with col_right:
                         swatches = "".join([f'<div class="color-box" style="background-color:{c}; width:15px; height:15px;" title="{c}"></div>' for c in similar_colors])
                         st.markdown(swatches, unsafe_allow_html=True)
                     with c_col2:
+                        # Ensure main_color is valid hex
                         new_color = st.color_picker("修改", value=main_color, key=f"cp_sb_{i}", label_visibility="collapsed")
                     
                     for original in similar_colors:
@@ -440,4 +485,5 @@ with col_right:
                     cm.apply_changes(changes_map, new_output_path)
                     
                     st.session_state['current_svg_path'] = new_output_path
+                    push_to_history(new_output_path) # Add edit to history
                     st.rerun()

@@ -86,17 +86,16 @@ class SVGColorManager:
             processed.add(color)
             
             # Find all other colors close to this one
-            # Note: This is a simple greedy approach. For better results, 
-            # we might want to find the 'center' of a cluster, but this works for UI.
             for other in unique_colors:
                 if other not in processed:
                     if self.color_distance(color, other) <= dist_threshold:
                         current_group.append(other)
                         processed.add(other)
             
-            # Use the first color (usually the most dominant if sorted?) as key
-            # Or maybe the one with most elements? For now, just the first one found.
-            groups[color] = current_group
+            # Find the dominant color in the group (most used)
+            dominant_color = max(current_group, key=lambda c: len(self.colors[c]))
+            
+            groups[dominant_color] = current_group
             
         return groups
 
