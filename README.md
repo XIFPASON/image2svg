@@ -19,7 +19,7 @@ VTracer 提供 Windows、macOS 和 Linux 的安装方式，请参考其官方仓
 ## 安装与运行
 
 ```bash
-git clone https://github.com/yolloo888/image2svg.git
+git clone https://github.com/XIFPASON/image2svg.git
 cd image2svg
 python -m venv .venv
 ```
