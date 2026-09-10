@@ -57,6 +57,12 @@ curl -F "file=@example.png" http://127.0.0.1:8000/convert
 
 公开部署 API 前，请在反向代理层配置认证、速率限制、文件清理和请求大小限制。该项目默认定位为本地工具。
 
+## 致谢与归属
+
+本项目默认调用 [VTracer](https://github.com/visioncortex/vtracer) 完成矢量化；VTracer 的算法与实现归 VisionCortex 及其贡献者所有。本项目也依赖 FastAPI、Streamlit、Pillow、NumPy、OpenCV、svgwrite、python-multipart 和 Uvicorn 等开源项目。
+
+完整的用途、来源与许可证说明见 [第三方项目致谢与声明](THIRD_PARTY_NOTICES.md)。本仓库的 MIT 许可证只适用于本项目自身代码，不取代任何上游许可证。
+
 ## 开发
 
 ```bash
