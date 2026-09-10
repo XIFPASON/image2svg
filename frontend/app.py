@@ -10,7 +10,7 @@ from backend.core.fast_converter import FastConverter
 from backend.core.color_manager import SVGColorManager
 from backend.core.config import OUTPUT_DIR, new_output_path, new_upload_path
 
-st.set_page_config(page_title="位图转 SVG 工具", layout="wide", page_icon="🎨")
+st.set_page_config(page_title="Image to SVG", layout="wide", page_icon="🎨")
 
 # Custom CSS for better UI
 st.markdown("""
@@ -50,18 +50,18 @@ st.markdown("""
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     
-    /* 右侧固定栏样式 Hack */
-    /* 选中主布局的 Columns 容器 */
+    /* Fixed right-panel layout */
+    /* Align the main column container at the top. */
     section[data-testid="stMain"] > div[data-testid="stVerticalBlock"] > div[data-testid="stHorizontalBlock"] {
-        align-items: flex-start; /* 顶部对齐 */
+        align-items: flex-start;
     }
     
-    /* 强制固定右侧列 (第二个 Column) */
+    /* Pin the second column as the right panel. */
     section[data-testid="stMain"] > div[data-testid="stVerticalBlock"] > div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(2) {
         position: fixed !important;
-        top: 3.75rem; /* 避开 Header */
+        top: 3.75rem;
         right: 0;
-        width: 320px !important; /* 固定宽度 */
+        width: 320px !important;
         height: calc(100vh - 3.75rem);
         overflow-y: auto;
         background-color: #ffffff;
@@ -71,14 +71,14 @@ st.markdown("""
         box-shadow: -2px 0 10px rgba(0,0,0,0.02);
     }
     
-    /* 调整左侧列 (第一个 Column) 以适应右侧固定栏 */
+    /* Reserve room for the fixed right panel. */
     section[data-testid="stMain"] > div[data-testid="stVerticalBlock"] > div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1) {
-        margin-right: 340px; /* 留出右侧栏宽度 + 间隙 */
+        margin-right: 340px;
         width: auto !important;
-        min-width: 0; /* 防止 flex 子项溢出 */
+        min-width: 0;
     }
     
-    /* 隐藏右侧列在移动端的固定效果 (可选) */
+    /* Restore normal column flow on narrow screens. */
     @media (max-width: 768px) {
         section[data-testid="stMain"] > div[data-testid="stVerticalBlock"] > div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(2) {
             position: static !important;
@@ -94,12 +94,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="main-header">🎨 位图转 SVG 工具 (VTracer)</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header">🎨 Image to SVG (VTracer)</div>', unsafe_allow_html=True)
 
 # Initialize Session State for Advanced Settings
 default_settings = {
-    "adv_mode": "spline (平滑曲线)",
-    "adv_hierarchical": "stacked (堆叠)",
+    "adv_mode": "spline (Smooth)",
+    "adv_hierarchical": "stacked (Stacked)",
     "adv_gradient_step": 64,
     "adv_corner_threshold": 60,
     "adv_segment_length": 4,
@@ -127,7 +127,7 @@ def push_to_history(path):
         st.session_state['history_pointer'] += 1
 
 # Define History Dialog
-@st.dialog("📜 历史记录", width="large")
+@st.dialog("📜 History", width="large")
 def show_history_dialog():
     # ... (existing code for history dialog)
     st.markdown("""
@@ -162,7 +162,7 @@ def show_history_dialog():
         svg_files = [f for f in files if f.suffix == ".svg"]
         
         if not svg_files:
-            st.info("暂无历史记录")
+            st.info("No conversion history yet.")
         else:
             # Grid Layout for Dialog
             cols_per_row = 4
@@ -192,13 +192,13 @@ def show_history_dialog():
                             # Buttons
                             c1, c2 = st.columns(2)
                             with c1:
-                                if st.button("📂", key=f"l_{filename}", help="加载"):
+                                if st.button("📂", key=f"l_{filename}", help="Load"):
                                     st.session_state['current_svg_path'] = str(file_path)
                                     st.session_state['original_svg_path'] = str(file_path)
                                     push_to_history(file_path) # Add loaded file to history
                                     st.rerun()
                             with c2:
-                                if st.button("🗑️", key=f"d_{filename}", help="删除"):
+                                if st.button("🗑️", key=f"d_{filename}", help="Delete"):
                                     try:
                                         os.remove(file_path)
                                         st.rerun()
@@ -211,55 +211,55 @@ def show_history_dialog():
 with st.sidebar:
     # Check for VTracer (Silent check)
     if not FastConverter().is_vtracer_available:
-        st.warning("未检测到 VTracer，将使用基础轮廓模式。安装 VTracer 可获得彩色高质量结果。")
+        st.warning("VTracer was not found. Basic monochrome contour tracing will be used. Install VTracer for high-quality color output.")
 
     # History Button
-    if st.button("📜 历史记录", use_container_width=True):
+    if st.button("📜 History", use_container_width=True):
         show_history_dialog()
 
     st.markdown("---")
-    st.subheader("基础设置")
-    colormode = st.selectbox("颜色模式", ["color (彩色)", "binary (黑白)"], index=0, help="选择输出是彩色还是黑白")
+    st.subheader("Basic Settings")
+    colormode = st.selectbox("Color Mode", ["color", "binary"], index=0, help="Choose color or monochrome output.")
     colormode_val = "color" if "color" in colormode else "binary"
     
-    color_precision = st.slider("颜色精度", 1, 8, 6, help="数值越高颜色越准，但文件越大 (默认: 6)")
-    filter_speckle = st.slider("噪点过滤", 0, 128, 4, help="过滤掉小于此像素值的噪点区域，使图像更干净 (默认: 4)")
+    color_precision = st.slider("Color Precision", 1, 8, 6, help="Higher values preserve more colors but create larger files. Default: 6.")
+    filter_speckle = st.slider("Speckle Filter", 0, 128, 4, help="Remove small noisy regions. Default: 4.")
 
     # Advanced Settings in Sidebar (Default Expanded)
-    with st.expander("🛠️ 高级设置", expanded=True):
+    with st.expander("🛠️ Advanced Settings", expanded=True):
         st.selectbox(
-            "曲线模式", 
-            ["spline (平滑曲线)", "polygon (直线)", "none (无)"], 
+            "Curve Mode",
+            ["spline (Smooth)", "polygon (Straight)", "none (None)"],
             key="adv_mode",
             index=["spline", "polygon", "none"].index(st.session_state['adv_mode'].split(" ")[0]),
-            help="定义路径的形状。Spline 更平滑，Polygon 更锐利。"
+            help="Controls path geometry. Spline is smoother; polygon is sharper."
         )
         
         st.selectbox(
-            "分层模式", 
-            ["stacked (堆叠)", "cutout (剪切)"], 
+            "Layering Mode",
+            ["stacked (Stacked)", "cutout (Cutout)"],
             key="adv_hierarchical",
             index=["stacked", "cutout"].index(st.session_state['adv_hierarchical'].split(" ")[0]),
-            help="Stacked: 形状堆叠在彼此之上。Cutout: 形状互不重叠。"
+            help="Stacked layers shapes. Cutout creates non-overlapping shapes."
         )
         
-        st.slider("梯度阈值", 0, 255, key="adv_gradient_step", value=st.session_state['adv_gradient_step'], help="颜色梯度的量化步长 (默认: 64)")
-        st.slider("拐角阈值", 0, 180, key="adv_corner_threshold", value=st.session_state['adv_corner_threshold'], help="平滑曲线时的拐角角度阈值 (默认: 60)")
-        st.slider("最小线段长度", 3, 20, key="adv_segment_length", value=st.session_state['adv_segment_length'], help="忽略短于此长度的线段 (默认: 4)")
-        st.slider("拼接阈值", 0, 180, key="adv_splice_threshold", value=st.session_state['adv_splice_threshold'], help="拼接连续线段的角度阈值 (默认: 45)")
+        st.slider("Gradient Step", 0, 255, key="adv_gradient_step", value=st.session_state['adv_gradient_step'], help="Color-gradient quantization step. Default: 64.")
+        st.slider("Corner Threshold", 0, 180, key="adv_corner_threshold", value=st.session_state['adv_corner_threshold'], help="Corner-angle threshold for smooth curves. Default: 60.")
+        st.slider("Minimum Segment Length", 3, 20, key="adv_segment_length", value=st.session_state['adv_segment_length'], help="Ignore segments shorter than this value. Default: 4.")
+        st.slider("Splice Threshold", 0, 180, key="adv_splice_threshold", value=st.session_state['adv_splice_threshold'], help="Angle threshold for joining consecutive segments. Default: 45.")
         
         def reset_params():
             for key, val in default_settings.items():
                 st.session_state[key] = val
 
-        st.button("↺ 重置参数", use_container_width=True, on_click=reset_params)
+        st.button("↺ Reset Settings", use_container_width=True, on_click=reset_params)
 
 # Main Layout
 # Use columns to create the layout structure, CSS will handle the positioning
 col_main, col_right = st.columns([1, 1]) # Ratio doesn't matter much due to CSS override, but keeping 1:1 is safe
 
 with col_main:
-    st.subheader("📤 上传图片")
+    st.subheader("📤 Upload Image")
     
     # Initialize uploader key for reset functionality
     if 'uploader_key' not in st.session_state:
@@ -267,7 +267,7 @@ with col_main:
 
     # File Uploader
     uploaded_file = st.file_uploader(
-        "拖拽或点击上传", 
+        "Drag and drop or click to upload",
         type=["png", "jpg", "jpeg"], 
         key=f"uploader_{st.session_state['uploader_key']}"
     )
@@ -304,7 +304,7 @@ with col_main:
                 # File Info
                 st.markdown(f"**{uploaded_file.name}**")
                 st.caption(f"{uploaded_file.size / 1024:.1f} KB")
-                st.caption("✨ 调整左侧参数可实时预览")
+                st.caption("✨ Adjust settings in the sidebar to update the preview.")
                 
             with c3:
                 # Placeholder for alignment, or we can remove this column if not needed
@@ -312,7 +312,7 @@ with col_main:
                 
             with c4:
                 # Delete Button
-                if st.button("✕", help="移除图片"):
+                if st.button("✕", help="Remove image"):
                     st.session_state['uploader_key'] += 1
                     # Clear session state related to current file
                     keys_to_clear = ['current_svg_path', 'original_svg_path', 'last_params', 'last_file_id']
@@ -349,7 +349,7 @@ with col_main:
         )
 
         if should_convert:
-            with st.spinner("正在实时转换..."):
+            with st.spinner("Converting..."):
                 output_path = new_output_path()
                 
                 try:
@@ -379,12 +379,12 @@ with col_main:
                     st.rerun()
                     
                 except Exception as e:
-                    st.error(f"转换失败: {e}")
+                    st.error(f"Conversion failed: {e}")
 
     # Display Result (if exists)
     if 'current_svg_path' in st.session_state and os.path.exists(st.session_state['current_svg_path']):
         st.markdown("---")
-        st.subheader("SVG 预览")
+        st.subheader("SVG Preview")
         current_path = st.session_state['current_svg_path']
         
         # Display SVG
@@ -404,7 +404,7 @@ with col_main:
         with open(current_path, "rb") as f:
             file_name = os.path.basename(current_path)
             st.download_button(
-                label="⬇️ 下载 SVG 文件",
+                label="⬇️ Download SVG",
                 data=f,
                 file_name=file_name,
                 mime="image/svg+xml",
@@ -412,7 +412,7 @@ with col_main:
             )
     else:
         if not uploaded_file:
-            st.info("👈 请先上传图片，系统将自动进行矢量化转换")
+            st.info("👈 Upload an image to start vectorization automatically.")
 
 # Right Sidebar (Column) for Color Palette
 with col_right:
@@ -421,19 +421,19 @@ with col_right:
         # Undo/Redo Buttons
         ur_col1, ur_col2 = st.columns(2)
         with ur_col1:
-            if st.button("↩️ 撤销", use_container_width=True, disabled=st.session_state['history_pointer'] <= 0, help="快捷键: 无 (Streamlit限制)"):
+            if st.button("↩️ Undo", use_container_width=True, disabled=st.session_state['history_pointer'] <= 0, help="Keyboard shortcuts are unavailable in Streamlit."):
                 if st.session_state['history_pointer'] > 0:
                     st.session_state['history_pointer'] -= 1
                     st.session_state['current_svg_path'] = st.session_state['history_stack'][st.session_state['history_pointer']]
                     st.rerun()
         with ur_col2:
-            if st.button("↪️ 重做", use_container_width=True, disabled=st.session_state['history_pointer'] >= len(st.session_state['history_stack']) - 1):
+            if st.button("↪️ Redo", use_container_width=True, disabled=st.session_state['history_pointer'] >= len(st.session_state['history_stack']) - 1):
                 if st.session_state['history_pointer'] < len(st.session_state['history_stack']) - 1:
                     st.session_state['history_pointer'] += 1
                     st.session_state['current_svg_path'] = st.session_state['history_stack'][st.session_state['history_pointer']]
                     st.rerun()
 
-        st.subheader("🎨 智能调色板")
+        st.subheader("🎨 Smart Palette")
         
         # Initialize Color Manager
         if 'color_manager' not in st.session_state or st.session_state.get('cm_svg_path') != st.session_state['current_svg_path']:
@@ -443,10 +443,10 @@ with col_right:
         cm = st.session_state['color_manager']
         unique_colors = cm.get_unique_colors()
         
-        st.caption(f"共 {len(unique_colors)} 种颜色")
+        st.caption(f"{len(unique_colors)} colors found")
         
         # Tolerance Slider
-        tolerance = st.slider("合并容差", 0, 100, 10, key="sidebar_tolerance")
+        tolerance = st.slider("Merge Tolerance", 0, 100, 10, key="sidebar_tolerance")
         groups = cm.group_similar_colors(tolerance)
         
         # Color Editing Form
@@ -458,18 +458,18 @@ with col_right:
                 with st.container(border=True):
                     c_col1, c_col2 = st.columns([3, 1])
                     with c_col1:
-                        st.markdown(f"**组 {i+1}** ({len(similar_colors)})")
+                        st.markdown(f"**Group {i+1}** ({len(similar_colors)})")
                         swatches = "".join([f'<div class="color-box" style="background-color:{c}; width:15px; height:15px;" title="{c}"></div>' for c in similar_colors])
                         st.markdown(swatches, unsafe_allow_html=True)
                     with c_col2:
                         # Ensure main_color is valid hex
-                        new_color = st.color_picker("修改", value=main_color, key=f"cp_sb_{i}", label_visibility="collapsed")
+                        new_color = st.color_picker("Edit", value=main_color, key=f"cp_sb_{i}", label_visibility="collapsed")
                     
                     for original in similar_colors:
                         if original != new_color:
                             changes_map[original] = new_color
             
-            apply_btn = st.form_submit_button("✨ 应用更改", type="primary")
+            apply_btn = st.form_submit_button("✨ Apply Changes", type="primary")
             
             if apply_btn:
                 if changes_map:

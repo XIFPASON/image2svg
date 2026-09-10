@@ -1,26 +1,26 @@
-# 第三方项目致谢与声明
+# Third-Party Notices
 
-`image2svg` 是一个整合工具，并不声称拥有其依赖项目的算法、框架或实现。
+`image2svg` is an integration tool. It does not claim ownership of the algorithms, frameworks, or implementations provided by its dependencies.
 
-## 核心矢量化引擎
+## Core Vectorization Engine
 
-- [VTracer](https://github.com/visioncortex/vtracer)，由 VisionCortex 开发，提供本项目默认使用的位图到彩色 SVG 矢量化能力。本项目通过命令行调用 VTracer，不包含或修改 VTracer 的源代码及二进制发布物。VTracer 采用 MIT 许可证；详见其上游仓库的许可证文件。
+- [VTracer](https://github.com/visioncortex/vtracer), developed by VisionCortex, provides the default bitmap-to-color-SVG vectorization engine. This project invokes VTracer as a command-line executable; it does not include or modify VTracer source code or binary releases. VTracer is licensed under MIT; refer to its upstream repository for the full license text.
 
-## 直接依赖
+## Direct Dependencies
 
-| 项目 | 在本项目中的用途 | 上游许可证与来源 |
+| Project | Role in image2svg | Upstream license |
 | --- | --- | --- |
 | [FastAPI](https://github.com/fastapi/fastapi) | HTTP API | MIT |
-| [Streamlit](https://github.com/streamlit/streamlit) | 本地图形界面 | Apache-2.0 |
-| [Pillow](https://github.com/python-pillow/Pillow) | 图片读取与校验 | HPND / PIL Software License |
-| [NumPy](https://github.com/numpy/numpy) | 图像数组处理 | BSD-3-Clause |
-| [OpenCV](https://github.com/opencv/opencv)（经 `opencv-python-headless` 分发） | 基础轮廓转换回退实现 | Apache-2.0 |
-| [svgwrite](https://github.com/mozman/svgwrite) | SVG 输出 | MIT |
-| [python-multipart](https://github.com/Kludex/python-multipart) | API 文件上传解析 | Apache-2.0 |
-| [Uvicorn](https://github.com/Kludex/uvicorn) | ASGI 服务运行 | BSD-3-Clause |
+| [Streamlit](https://github.com/streamlit/streamlit) | Local graphical interface | Apache-2.0 |
+| [Pillow](https://github.com/python-pillow/Pillow) | Image loading and validation | HPND / PIL Software License |
+| [NumPy](https://github.com/numpy/numpy) | Image-array processing | BSD-3-Clause |
+| [OpenCV](https://github.com/opencv/opencv), distributed through `opencv-python-headless` | Fallback contour tracing | Apache-2.0 |
+| [svgwrite](https://github.com/mozman/svgwrite) | SVG output | MIT |
+| [python-multipart](https://github.com/Kludex/python-multipart) | API upload parsing | Apache-2.0 |
+| [Uvicorn](https://github.com/Kludex/uvicorn) | ASGI server | BSD-3-Clause |
 
-开发依赖（如 `pytest`、`httpx`）同样各自受其上游许可证约束。
+Development dependencies, including `pytest` and `httpx`, remain subject to their own upstream licenses.
 
-## 许可证适用范围
+## License Scope
 
-本仓库自身代码以 [MIT License](LICENSE) 发布。第三方项目仍分别受其各自许可证约束；本文件是归属说明而非这些许可证文本的替代品。安装、分发或部署时，请以对应版本上游发布物中附带的完整许可证和版权声明为准。
+Code authored for this repository is released under the [MIT License](LICENSE). Every third-party component remains governed by its own license. This notice is an attribution summary, not a replacement for any upstream license text; use the full copyright and license notices shipped with the applicable upstream release when installing, distributing, or deploying this project.

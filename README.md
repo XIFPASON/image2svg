@@ -1,24 +1,25 @@
 # image2svg
 
-![image2svg 项目封面](assets/cover.png)
+![image2svg project cover](assets/cover.png)
 
-一个本地运行的位图转 SVG 工具，提供 Streamlit 图形界面和 FastAPI 接口。默认使用 [VTracer](https://github.com/visioncortex/vtracer) 生成彩色 SVG；未安装 VTracer 时会回退到基础黑白轮廓转换。
+A local bitmap-to-SVG converter with a Streamlit interface and a FastAPI endpoint. It uses [VTracer](https://github.com/visioncortex/vtracer) for high-quality color vectorization when available, and falls back to basic monochrome contour tracing without it.
 
-## 特性
+## Features
 
-- 支持 PNG、JPG、JPEG 输入，以及 VTracer 的颜色、曲线和分层参数。
-- 支持在浏览器中预览 SVG、编辑颜色与下载结果。
-- 同时提供图形界面和 HTTP API。
-- 运行数据存于 `.image2svg/`，不提交用户图片和转换结果。
+- Converts PNG, JPG, and JPEG images to SVG.
+- Exposes VTracer color, curve, and layering controls.
+- Previews SVG output, supports palette edits, and downloads results in the browser.
+- Provides both a local graphical interface and an HTTP API.
+- Keeps runtime files in `.image2svg/`, outside version control.
 
-## 要求
+## Requirements
 
-- Python 3.10 或更高版本。
-- 可选但推荐：安装 VTracer 并确保 `vtracer` 在 `PATH` 中。也可通过 `VTRACER_PATH` 指向可执行文件。
+- Python 3.10 or newer.
+- Recommended: install VTracer and make `vtracer` available on your `PATH`. You can also point `VTRACER_PATH` at its executable.
 
-VTracer 提供 Windows、macOS 和 Linux 的安装方式，请参考其官方仓库。项目不包含其二进制文件，因此不会将平台特定文件或第三方发布产物提交到 Git。
+VTracer supports Windows, macOS, and Linux. This repository does not distribute VTracer binaries or other platform-specific third-party artifacts.
 
-## 安装与运行
+## Installation
 
 ```bash
 git clone https://github.com/XIFPASON/image2svg.git
@@ -26,19 +27,19 @@ cd image2svg
 python -m venv .venv
 ```
 
-激活虚拟环境后安装：
+Activate the environment, then install the project:
 
 ```bash
 pip install -e .
 ```
 
-启动图形界面：
+Start the graphical interface:
 
 ```bash
 python -m streamlit run frontend/app.py
 ```
 
-Windows 用户也可以运行 `./run_gui.ps1`。默认地址为 `http://localhost:8501`。
+On Windows, you can also use `./run_gui.ps1`. The app is available at `http://localhost:8501` by default.
 
 ## HTTP API
 
@@ -47,29 +48,29 @@ uvicorn backend.api.app:app --reload
 curl -F "file=@example.png" http://127.0.0.1:8000/convert
 ```
 
-响应会返回任务 ID 和结果地址。轮询 `GET /result/{task_id}`；完成后将直接返回 SVG。默认单个上传最大 20 MiB，可用 `IMAGE2SVG_MAX_UPLOAD_BYTES` 调整。
+The response includes a task ID and a result URL. Poll `GET /result/{task_id}`; it returns the SVG when conversion completes. The default API upload limit is 20 MiB and can be configured with `IMAGE2SVG_MAX_UPLOAD_BYTES`.
 
-## 配置
+## Configuration
 
-| 环境变量 | 用途 |
+| Environment variable | Purpose |
 | --- | --- |
-| `VTRACER_PATH` | VTracer 可执行文件的绝对或相对路径。 |
-| `IMAGE2SVG_DATA_DIR` | 上传和输出目录，默认 `.image2svg/`。 |
-| `IMAGE2SVG_MAX_UPLOAD_BYTES` | API 单个上传大小上限，默认 `20971520`。 |
+| `VTRACER_PATH` | Absolute or relative path to the VTracer executable. |
+| `IMAGE2SVG_DATA_DIR` | Upload and output location. Defaults to `.image2svg/`. |
+| `IMAGE2SVG_MAX_UPLOAD_BYTES` | Maximum API upload size. Defaults to `20971520`. |
 
-公开部署 API 前，请在反向代理层配置认证、速率限制、文件清理和请求大小限制。该项目默认定位为本地工具。
+This is designed as a local tool. Before exposing the API publicly, add authentication, rate limiting, file-retention rules, and request-size limits at the reverse-proxy layer.
 
-## 致谢与归属
+## Credits
 
-本项目默认调用 [VTracer](https://github.com/visioncortex/vtracer) 完成矢量化；VTracer 的算法与实现归 VisionCortex 及其贡献者所有。本项目也依赖 FastAPI、Streamlit、Pillow、NumPy、OpenCV、svgwrite、python-multipart 和 Uvicorn 等开源项目。
+The default vectorization path is powered by [VTracer](https://github.com/visioncortex/vtracer). Its algorithms and implementation belong to VisionCortex and its contributors. This project also relies on FastAPI, Streamlit, Pillow, NumPy, OpenCV, svgwrite, python-multipart, and Uvicorn.
 
-完整的用途、来源与许可证说明见 [第三方项目致谢与声明](THIRD_PARTY_NOTICES.md)。本仓库的 MIT 许可证只适用于本项目自身代码，不取代任何上游许可证。
+See [Third-Party Notices](THIRD_PARTY_NOTICES.md) for source, usage, and license details. This repository's MIT license applies only to code authored for image2svg and does not replace any upstream license.
 
-## 开发
+## Development
 
 ```bash
 pip install -e ".[dev]"
 pytest
 ```
 
-欢迎阅读 [贡献指南](CONTRIBUTING.md)。项目以 [MIT](LICENSE) 协议发布；VTracer 及其他依赖分别遵循其自身许可证。
+Read [Contributing](CONTRIBUTING.md) before opening a pull request. image2svg is released under the [MIT License](LICENSE); third-party components remain subject to their own licenses.

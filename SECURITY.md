@@ -1,5 +1,5 @@
-# 安全策略
+# Security Policy
 
-请不要在公开 issue 中披露安全漏洞。请通过仓库维护者的私密联系方式报告，并附上复现步骤与影响说明。
+Do not disclose security vulnerabilities in public issues. Report them privately to the repository maintainers with reproduction steps and impact details.
 
-本项目默认供本地使用。将 FastAPI 服务暴露到公网前，请在反向代理层配置认证、请求大小限制、速率限制与文件保留策略。
+This project is intended for local use. Before exposing its FastAPI service publicly, configure authentication, request-size limits, rate limiting, and file-retention policies at the reverse-proxy layer.

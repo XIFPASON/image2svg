@@ -1,10 +1,10 @@
-# 贡献指南
+# Contributing
 
-欢迎提交 issue 和 pull request。提交前请创建虚拟环境、安装开发依赖，并运行：
+Issues and pull requests are welcome. Before submitting a change, create a virtual environment, install development dependencies, and run:
 
 ```bash
 pip install -e ".[dev]"
 pytest
 ```
 
-请保持改动聚焦，为行为变更补充测试，并不要提交 `.image2svg/`、本地 VTracer 二进制或用户图片。
+Keep changes focused, add tests for behavior changes, and do not commit `.image2svg/`, local VTracer binaries, or user images.
