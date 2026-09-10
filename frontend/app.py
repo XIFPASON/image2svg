@@ -1,7 +1,6 @@
 import streamlit as st
 import os
 import sys
-import time
 import base64
 from PIL import Image
 
@@ -9,6 +8,7 @@ from PIL import Image
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from backend.core.fast_converter import FastConverter
 from backend.core.color_manager import SVGColorManager
+from backend.core.config import OUTPUT_DIR, new_output_path, new_upload_path
 
 st.set_page_config(page_title="位图转 SVG 工具", layout="wide", page_icon="🎨")
 
@@ -157,9 +157,9 @@ def show_history_dialog():
     </style>
     """, unsafe_allow_html=True)
 
-    if os.path.exists("outputs"):
-        files = sorted(os.listdir("outputs"), reverse=True)
-        svg_files = [f for f in files if f.endswith(".svg") and "edited" not in f]
+    if OUTPUT_DIR.exists():
+        files = sorted(OUTPUT_DIR.iterdir(), reverse=True)
+        svg_files = [f for f in files if f.suffix == ".svg"]
         
         if not svg_files:
             st.info("暂无历史记录")
@@ -170,8 +170,8 @@ def show_history_dialog():
             
             for row in rows:
                 cols = st.columns(cols_per_row)
-                for idx, filename in enumerate(row):
-                    file_path = os.path.join("outputs", filename)
+                for idx, file_path in enumerate(row):
+                    filename = file_path.name
                     with cols[idx]:
                         try:
                             with open(file_path, "r") as f:
@@ -193,8 +193,8 @@ def show_history_dialog():
                             c1, c2 = st.columns(2)
                             with c1:
                                 if st.button("📂", key=f"l_{filename}", help="加载"):
-                                    st.session_state['current_svg_path'] = file_path
-                                    st.session_state['original_svg_path'] = file_path
+                                    st.session_state['current_svg_path'] = str(file_path)
+                                    st.session_state['original_svg_path'] = str(file_path)
                                     push_to_history(file_path) # Add loaded file to history
                                     st.rerun()
                             with c2:
@@ -210,11 +210,8 @@ def show_history_dialog():
 # Sidebar for configuration
 with st.sidebar:
     # Check for VTracer (Silent check)
-    vtracer_path = "vtracer.exe" if os.path.exists("vtracer.exe") else None
-    if not vtracer_path:
-        st.error("❌ 未检测到 vtracer.exe")
-        st.info("请下载 vtracer.exe 并放置在项目根目录下。")
-        st.stop()
+    if not FastConverter().is_vtracer_available:
+        st.warning("未检测到 VTracer，将使用基础轮廓模式。安装 VTracer 可获得彩色高质量结果。")
 
     # History Button
     if st.button("📜 历史记录", use_container_width=True):
@@ -291,9 +288,8 @@ with col_main:
         image = Image.open(uploaded_file)
         
         # Save temp
-        temp_input_path = os.path.join("uploads", f"temp_{uploaded_file.name}")
-        os.makedirs("uploads", exist_ok=True)
-        with open(temp_input_path, "wb") as f:
+        temp_input_path = new_upload_path(uploaded_file.name)
+        with temp_input_path.open("wb") as f:
             f.write(uploaded_file.getbuffer())
         
         # Custom Uploaded File Row
@@ -341,7 +337,7 @@ with col_main:
         }
         
         # 2. Check if conversion is needed
-        file_id = f"{uploaded_file.name}_{uploaded_file.size}"
+        file_id = f"{uploaded_file.name}_{uploaded_file.size}_{hash(uploaded_file.getvalue())}"
         last_params = st.session_state.get('last_params', {})
         last_file_id = st.session_state.get('last_file_id', None)
         
@@ -354,15 +350,12 @@ with col_main:
 
         if should_convert:
             with st.spinner("正在实时转换..."):
-                timestamp = int(time.time())
-                output_filename = f"result_{timestamp}_{uploaded_file.name}.svg"
-                output_path = os.path.join("outputs", output_filename)
-                os.makedirs("outputs", exist_ok=True)
+                output_path = new_output_path()
                 
                 try:
                     converter = FastConverter()
                     converter.convert(
-                        temp_input_path, output_path,
+                        str(temp_input_path), str(output_path),
                         colormode=current_params['colormode'],
                         filter_speckle=current_params['filter_speckle'],
                         color_precision=current_params['color_precision'],
@@ -375,8 +368,8 @@ with col_main:
                     )
                     
                     # Update State
-                    st.session_state['current_svg_path'] = output_path
-                    st.session_state['original_svg_path'] = output_path
+                    st.session_state['current_svg_path'] = str(output_path)
+                    st.session_state['original_svg_path'] = str(output_path)
                     st.session_state['last_params'] = current_params
                     st.session_state['last_file_id'] = file_id
                     
@@ -480,10 +473,9 @@ with col_right:
             
             if apply_btn:
                 if changes_map:
-                    new_filename = f"edited_{int(time.time())}.svg"
-                    new_output_path = os.path.join("outputs", new_filename)
-                    cm.apply_changes(changes_map, new_output_path)
-                    
-                    st.session_state['current_svg_path'] = new_output_path
-                    push_to_history(new_output_path) # Add edit to history
+                    edited_output_path = new_output_path()
+                    cm.apply_changes(changes_map, str(edited_output_path))
+
+                    st.session_state['current_svg_path'] = str(edited_output_path)
+                    push_to_history(str(edited_output_path)) # Add edit to history
                     st.rerun()

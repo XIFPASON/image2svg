@@ -1,5 +1,1 @@
-streamlit
-Pillow
-numpy
-opencv-python-headless
-svgwrite
+-e .

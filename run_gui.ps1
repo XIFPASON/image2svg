@@ -1,2 +1,2 @@
-$env:PYTHONPATH += ";$PSScriptRoot\diffvg"
+Set-Location $PSScriptRoot
 python -m streamlit run frontend/app.py

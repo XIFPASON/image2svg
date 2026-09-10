@@ -2,5 +2,11 @@ __pycache__/
 *.pyc
 uploads/
 outputs/
+.image2svg/
 .vscode/
 *.log
+.env
+.venv/
+*.egg-info/
+vtracer
+vtracer.exe

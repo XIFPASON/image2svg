@@ -1,22 +1,40 @@
 import cv2
 import numpy as np
 import svgwrite
-import os
 import subprocess
 import shutil
+import os
+from pathlib import Path
+
+from .config import PROJECT_ROOT
 
 class FastConverter:
     def __init__(self):
-        # Check if vtracer is available in path or local directory
-        self.vtracer_path = shutil.which("vtracer")
-        if not self.vtracer_path and os.path.exists("vtracer.exe"):
-            self.vtracer_path = os.path.abspath("vtracer.exe")
+        self.vtracer_path = self._find_vtracer()
+
+    @staticmethod
+    def _find_vtracer():
+        """Find a VTracer binary without tying the project to one platform."""
+        configured_path = os.environ.get("VTRACER_PATH")
+        candidates = [configured_path] if configured_path else []
+        candidates.extend([shutil.which("vtracer"), shutil.which("vtracer.exe")])
+
+        # Backward compatible with a locally downloaded binary, but it is not tracked.
+        candidates.extend([PROJECT_ROOT / "vtracer", PROJECT_ROOT / "vtracer.exe"])
+        for candidate in candidates:
+            if candidate and Path(candidate).is_file():
+                return str(Path(candidate).resolve())
+        return None
+
+    @property
+    def is_vtracer_available(self):
+        return self.vtracer_path is not None
             
     def convert(self, image_path, output_path, callback=None, **kwargs):
         # Try VTracer first if available
         if self.vtracer_path:
             try:
-                print(f"🚀 Executing VTracer: {self.vtracer_path}")
+                print(f"Executing VTracer: {self.vtracer_path}")
                 
                 # Extract VTracer parameters from kwargs with defaults
                 colormode = kwargs.get('colormode', 'color')
@@ -51,23 +69,25 @@ class FastConverter:
                 # Run command
                 # Use shell=True on Windows if path has spaces or issues, but usually list is safer
                 # Ensure paths are absolute
-                process = subprocess.run(cmd, capture_output=True, text=True)
+                process = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
                 
                 if process.returncode == 0:
-                    print("✅ VTracer success!")
+                    print("VTracer completed successfully.")
                     if callback: callback(100, 100, 0)
                     return
                 else:
                     error_msg = f"VTracer failed with code {process.returncode}:\n{process.stderr}"
-                    print(f"❌ {error_msg}")
+                    print(error_msg)
                     raise RuntimeError(error_msg) # Don't fallback silently
                     
+            except subprocess.TimeoutExpired as e:
+                raise RuntimeError("VTracer timed out after 120 seconds.") from e
             except Exception as e:
-                print(f"❌ Error running VTracer: {e}")
+                print(f"Error running VTracer: {e}")
                 raise e # Re-raise to show in UI
 
         # Fallback: OpenCV Implementation (Only if VTracer not found)
-        print("⚠️ VTracer not found. Using OpenCV fallback...")
+        print("VTracer not found. Using OpenCV fallback.")
         
         # Read image using numpy to support non-ASCII paths
         try:
