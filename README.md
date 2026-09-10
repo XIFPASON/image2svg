@@ -1,5 +1,7 @@
 # image2svg
 
+![image2svg 项目封面](assets/cover.png)
+
 一个本地运行的位图转 SVG 工具，提供 Streamlit 图形界面和 FastAPI 接口。默认使用 [VTracer](https://github.com/visioncortex/vtracer) 生成彩色 SVG；未安装 VTracer 时会回退到基础黑白轮廓转换。
 
 ## 特性
